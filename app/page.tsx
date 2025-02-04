@@ -264,17 +264,73 @@ export default function Home() {
         />
       </div>
 
-      {/* Background Image (Top 30%) */}
-      <div
-        className="fixed top-0 left-0 right-0 h-[31vh] bg-cover bg-center z-0"
-        style={{
-          backgroundImage: `
-          linear-gradient(to bottom, transparent 80%, rgba(255, 255, 255, 1) 100%),
-          url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png')
-        `,
-          width: "calc(100% - 8px)", // Accounts for scrollbar width
-        }}
-      ></div>
+{/* Background Image (Top 30%) */}
+<div
+  className="fixed top-0 left-0 right-0 h-[32vh] bg-cover bg-center z-0 responsive-gradient"
+  style={{
+    backgroundImage: `
+      linear-gradient(to bottom, transparent 85%, rgba(255, 255, 255, 1) 100%),
+      url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png')
+    `,
+    width: "calc(100% - 8px)", // Accounts for scrollbar width
+  }}
+></div>
+
+{/* Custom CSS for Responsive Gradient */}
+<style jsx>{`
+  .responsive-gradient {
+    /* Default gradient for mobile and smaller screens */
+    background-image: linear-gradient(
+      to bottom,
+      transparent 80%,
+      rgba(255, 255, 255, 1) 100%
+    ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
+  }
+
+  /* Laptop (1024px - 1440px) */
+  @media (min-width: 1024px) and (max-width: 1440px) {
+    .responsive-gradient {
+      background-image: linear-gradient(
+        to bottom,
+        transparent 70%,
+        rgba(255, 255, 255, 1) 100%
+      ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
+    }
+  }
+
+  /* Desktop (1441px - 1920px) */
+  @media (min-width: 1441px) and (max-width: 1920px) {
+    .responsive-gradient {
+      background-image: linear-gradient(
+        to bottom,
+        transparent 60%,
+        rgba(255, 255, 255, 1) 100%
+      ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
+    }
+  }
+
+  /* 4K (1921px - 3840px) */
+  @media (min-width: 1921px) and (max-width: 3840px) {
+    .responsive-gradient {
+      background-image: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(255, 255, 255, 1) 100%
+      ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
+    }
+  }
+
+  /* 8K (3841px and above) */
+  @media (min-width: 3841px) {
+    .responsive-gradient {
+      background-image: linear-gradient(
+        to bottom,
+        transparent 40%,
+        rgba(255, 255, 255, 1) 100%
+      ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
+    }
+  }
+`}</style>
 
       {/* Text Above Gradient */}
       <div className="relative z-10 text-[27px] font-bold mt-32 ml-4">
@@ -649,7 +705,12 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-24 right-6 z-50 w-[380px] h-[700px] bg-white/10 backdrop-blur-lg shadow-lg rounded-2xl overflow-hidden flex flex-col"
+            className="fixed bottom-24 right-6 z-50 bg-white/10 backdrop-blur-lg shadow-lg rounded-2xl overflow-hidden flex flex-col"
+            style={{
+              // Dynamic width and height based on viewport size
+              width: `clamp(300px, 90vw, 380px)`, // Adjust max-width for 8K screens
+              height: `clamp(500px, 80vh, 1200px)`, // Adjust max-height for 8K screens
+            }}
           >
             {/* Main Content */}
             <div className="flex-1 overflow-hidden">{renderContent()}</div>

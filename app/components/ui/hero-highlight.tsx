@@ -38,7 +38,7 @@ export const HeroHighlight = ({
       <div className="absolute top-4 left-4 z-30">
         <Image
           src="/logo.png"
-          alt="Lexora Logo"
+          alt="Cryenx Logo"
           width={100}
           height={100}
           className="rounded-full w-35 h-35 xs:w-10 xs:h-10 sm:w-20 sm:h-20 md:w-25 md:h-25 lg:w-35 lg:h-35"
