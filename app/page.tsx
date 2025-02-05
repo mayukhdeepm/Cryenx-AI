@@ -432,7 +432,7 @@ export default function Home() {
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <IconMessage className="w-12 h-12 text-gray-400 mb-3" />
             <div className="text-gray-500">
-              No messages yet. Start a conversation!
+              Start a conversation by typing a message below
             </div>
           </div>
         )}
@@ -786,6 +786,9 @@ export default function Home() {
                 </span>
               </button>
             </div>
+            <div className="flex justify-center items-center mt-1 mb-3 text-xs text-gray-500">
+  Powered by Cryenx Labs
+</div>
           </motion.div>
         )}
       </AnimatePresence>
