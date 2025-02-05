@@ -1,4 +1,6 @@
 "use client";
+import React from "react";
+import ReactDOM from "react-dom";
 
 import { useState, useRef, useEffect } from "react";
 import {
@@ -20,94 +22,84 @@ type Message = {
 };
 
 const suggestionsData = [
-  "What is AI?",
-  "Help me brainstorm",
-  "Write a short story",
-  "Explain quantum computing",
-  "Generate a poem",
-  "Create a business plan",
+  "What We Do",
+  "Contact Us",
+  "What Projects We have done",
+  "Discord Server",
+  "What Industries We Serve",
 ];
 
 const faqQuestions = [
   {
-    question: "How does the AI work?",
+    question: "What does Cryenx Labs do?",
     answer:
-      "Our AI uses advanced machine learning algorithms to understand and respond to your queries.",
+      "Cryenx Labs is a cutting-edge technology company specializing in immersive experiences, social gaming, and artificial intelligence (AI). We create engaging solutions using AR, VR, generative AI, and XR to help brands connect with their audiences.",
   },
   {
-    question: "Is my data safe?",
+    question: "What services does Cryenx Labs offer?",
     answer:
-      "We prioritize your privacy and do not store personal conversations.",
+      "We offer a wide range of services, including Augmented Reality (AR) Solutions, Virtual Reality (VR) Solutions, Generative AI, 3D Design, XR Games, Computer Vision, MedTech, and Industry 5.0 Solutions.",
   },
   {
-    question: "What can I ask the AI?",
+    question: "How can I contact Cryenx Labs?",
     answer:
-      "You can ask about a wide range of topics, from general knowledge to creative tasks.",
+      "You can reach us via email at support@cryenx.com or visit our contact page at https://www.cryenx.com/contact .",
   },
   {
-    question: "How accurate are the responses?",
+    question: "Does Cryenx Labs work with small businesses?",
     answer:
-      "While our AI strives for accuracy, it's always good to verify important information.",
-  },
-  {
-    question: "How does the AI work?",
-    answer:
-      "Our AI uses advanced machine learning algorithms to understand and respond to your queries.",
-  },
-  {
-    question: "Is my data safe?",
-    answer:
-      "We prioritize your privacy and do not store personal conversations.",
-  },
-  {
-    question: "What can I ask the AI?",
-    answer:
-      "You can ask about a wide range of topics, from general knowledge to creative tasks.",
-  },
-  {
-    question: "How accurate are the responses?",
-    answer:
-      "While our AI strives for accuracy, it's always good to verify important information.",
+      "Absolutely! Cryenx Labs works with businesses of all sizes. Whether you’re a small business or a large enterprise, we can create customized immersive solutions for you.",
   },
   {
     question: "How does the AI work?",
     answer:
-      "Our AI uses advanced machine learning algorithms to understand and respond to your queries.",
+      "Yes, we specialize in creating custom AR and VR solutions tailored to your brand’s needs. Contact us at support@cryenx.com to discuss your project!",
   },
   {
-    question: "Is my data safe?",
+    question: "What industries does Cryenx Labs serve?",
     answer:
-      "We prioritize your privacy and do not store personal conversations.",
+      "We serve industries like gaming, retail, healthcare, education, real estate, manufacturing, and more. Our solutions are tailored to meet the unique needs of each industry.",
   },
   {
-    question: "What can I ask the AI?",
+    question: "What is extended reality (XR)?",
     answer:
-      "You can ask about a wide range of topics, from general knowledge to creative tasks.",
+      "Extended Reality (XR) is an umbrella term that includes Augmented Reality (AR), Virtual Reality (VR), and Mixed Reality (MR). At Cryenx Labs, we use XR to create immersive experiences that blend the physical and digital worlds.",
   },
   {
-    question: "How accurate are the responses?",
+    question: "Can Cryenx Labs integrate AI into my existing app?",
     answer:
-      "While our AI strives for accuracy, it's always good to verify important information.",
+      "Yes, we can integrate AI features like generative content, computer vision, or predictive analytics into your existing app. Let us know your needs, and we’ll create a tailored solution.",
   },
+  {
+    question: "Can Cryenx Labs help with product prototyping?",
+    answer:
+      "Yes, we use 3D design and VR to create virtual prototypes for products. This helps businesses visualize and refine their designs before moving to production.",
+  },
+  {
+    question: "What technologies does Cryenx Labs use?",
+    answer:
+      "We use a variety of technologies, including AR, VR, XR, generative AI, Unity, Unreal Engine, computer vision, and 3D design to create immersive experiences.",
+  },
+
 ];
 
 const newsItems = [
   {
-    title: "AI Advances in Healthcare",
+    title: "Virsive - The world's largest spatial design library",
     summary:
-      "New AI technologies are revolutionizing medical diagnostics and treatment planning.",
+      "Virsive is a comprehensive library of UI interfaces from the best extended reality apps across multiple platforms. Curated for XR Innovators, It helps you quickly find and save collections of app, design inspiration, and patterns, saving you time and effort.",
     date: "2024-02-04",
   },
   {
-    title: "Breakthrough in Climate Modeling",
+    title: "Launch of Immersive AR Experience for Global Fashion Brand",
     summary:
-      "Machine learning models provide more accurate climate change predictions.",
+      "Cryenx Labs has recently developed an innovative AR experience for a leading global fashion brand, allowing users to virtually try on clothing using their smartphones.",
     date: "2024-02-03",
   },
   {
-    title: "Ethical AI Development",
+    title: "Development of AI-Powered Virtual Influencers",
     summary:
-      "Tech companies focus on responsible AI development and deployment.",
+      "Cryenx Labs is at the forefront of creating AI-powered virtual influencers designed to engage audiences across various social media platforms. These lifelike avatars, created using generative AI, are becoming increasingly popular among brands looking to enhance their digital presence.",
     date: "2024-02-02",
   },
 ];
@@ -367,29 +359,29 @@ export default function Home() {
           {
             image:
               "https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/create-a-generative-ai-texturing-3d.jpg?v=1738615867294",
-            title: "The 2025 Customer Service Transformation Report is here",
+            title: "Augmented Reality Solutions",
             description:
-              "Learn how AI has transformed customer service from the group up--rewriting its economics. reshaping customer expectations, and unlocking new levels of scalability.",
+              "Augmented reality (AR) overlays digital information onto your physical world, creating a powerful interactive experience. We cut through the noise by merging the real with the digital to deliver impactful solutions.",
           },
           {
             image:
               "https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/create-a-generative-ai-modelling-3d.jpg?v=1738615897454",
             title:
-              "Meet Fin 2--the first AI Agent that delivers human-quality service",
+              "Virtual Reality Solutions",
             description:
-              "Fin 2 can handle all of your frontline support. It uses knowledge behavior, actions and insights to deliver the highest quality customer support, 24/7. Hire Fin 2 today and free your team for higher impact work.",
+              "VR is your portal to endless possibilities. We use VR to put people in alternate realities for training, gaming, or virtual tours. Our VR creates unmatched engagement.",
           },
           {
             image:
               "https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/create-a-concept-art.jpg?v=1738615900378",
-            title: "Ethical AI",
-            description: "Explore the ethics of AI development.",
+            title: "MedTech Solutions",
+            description: "MedTech signifies the intersection of medicine and technology. We create innovative medical applications leveraging XR to enhance surgical procedures, provide immersive patient education, and revolutionize medical training.",
           },
           {
             image:
               "https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/create-a-architecture-visualization.jpg?v=1738615901650",
-            title: "Creative AI",
-            description: "See how AI is used in creative industries.",
+            title: "Computer Vision Solutions",
+            description: "Computer vision equips machines with the ability to interpret and understand visual data from the real world. We utilize computer vision to bridge the physical and digital realms, creating seamless interactive experiences.",
           },
         ].map((item, index) => (
           <div
@@ -522,7 +514,7 @@ export default function Home() {
         </div>
 
         {/* Left-Aligned Text */}
-        <p className="text-black text-sm text-left">14 collections</p>
+        <p className="text-black text-sm text-left">10 collections</p>
 
         {/* Issues Container */}
         <div className="space-y-2">

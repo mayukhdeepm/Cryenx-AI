@@ -1,4 +1,6 @@
 import { type Message } from '../types/chat'
+import React from "react";
+
 
 type MessageListProps = {
   messages: Message[]
