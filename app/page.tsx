@@ -786,7 +786,7 @@ export default function Home() {
                 </span>
               </button>
             </div>
-            <div className="flex justify-center items-center mt-1 mb-3 text-xs text-gray-500">
+            <div className="flex justify-center items-center mt-1 mb-3 text-xs text-gray-500 bg-white">
   Powered by Cryenx Labs
 </div>
           </motion.div>
