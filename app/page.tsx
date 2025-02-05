@@ -80,7 +80,6 @@ const faqQuestions = [
     answer:
       "We use a variety of technologies, including AR, VR, XR, generative AI, Unity, Unreal Engine, computer vision, and 3D design to create immersive experiences.",
   },
-
 ];
 
 const newsItems = [
@@ -142,18 +141,20 @@ export default function Home() {
   // Add draggable scroll functionality to suggestions
   useEffect(() => {
     const suggestionsContainer = suggestionsContainerRef.current;
-  
+
     const handleWheel = (e: WheelEvent) => {
       if (suggestionsContainer) {
         suggestionsContainer.scrollLeft += e.deltaY;
         e.preventDefault(); // Prevent default scrolling behavior
       }
     };
-  
+
     if (suggestionsContainer) {
-      suggestionsContainer.addEventListener("wheel", handleWheel, { passive: false });
+      suggestionsContainer.addEventListener("wheel", handleWheel, {
+        passive: false,
+      });
     }
-  
+
     return () => {
       if (suggestionsContainer) {
         suggestionsContainer.removeEventListener("wheel", handleWheel);
@@ -169,30 +170,30 @@ export default function Home() {
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
-  
+
     setIsLoading(true);
     setIsGenerating(true);
-  
+
     // Create the user's message
     const userMessage: Message = {
       id: messages.length + 1,
       text: text.trim(),
       sender: "user",
     };
-  
+
     // Add the user's message to the state
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-  
+
     // Add a "thinking" message for the bot
     const thinkingMessage: Message = {
       id: messages.length + 2,
       text: "thinking...", // Temporary placeholder
       sender: "bot",
     };
-  
+
     setMessages((prevMessages) => [...prevMessages, thinkingMessage]);
     setError(null);
-  
+
     try {
       // Call the API to get the AI response
       const response = await fetch("/api/chat", {
@@ -202,23 +203,23 @@ export default function Home() {
         },
         body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
-  
+
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`);
       }
-  
+
       const data = await response.json();
-  
+
       // Simulate a delay for the fade-in effect
       await new Promise((resolve) => setTimeout(resolve, 500));
-  
+
       // Create the actual bot message
       const botMessage: Message = {
         id: messages.length + 2,
         text: data.result,
         sender: "bot",
       };
-  
+
       // Replace the "thinking" message with the actual bot message
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
@@ -230,7 +231,7 @@ export default function Home() {
       setError(
         error instanceof Error ? error.message : "An unexpected error occurred"
       );
-  
+
       // Remove the "thinking" message in case of an error
       setMessages((prevMessages) =>
         prevMessages.filter((msg) => msg.id !== thinkingMessage.id)
@@ -246,7 +247,7 @@ export default function Home() {
   };
 
   const renderHomeView = () => (
-    <div className="p-4 text-gray-300 overflow-y-auto h-full relative">
+    <div className="p-4 text-gray-300 overflow-y-auto h-full relative bg-white">
       {/* Top Left Logo */}
       <div className="absolute top-8 left-8 z-50">
         <img
@@ -256,73 +257,78 @@ export default function Home() {
         />
       </div>
 
-{/* Background Image (Top 30%) */}
-<div
-  className="fixed top-0 left-0 right-0 h-[32vh] bg-cover bg-center z-0 responsive-gradient"
-  style={{
-    backgroundImage: `
+      {/* Background Image (Top 30%) */}
+      <div
+        className="fixed top-0 left-0 right-0 h-[32vh] bg-cover bg-center z-0 responsive-gradient"
+        style={{
+          backgroundImage: `
       linear-gradient(to bottom, transparent 85%, rgba(255, 255, 255, 1) 100%),
       url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png')
     `,
-    width: "calc(100% - 8px)", // Accounts for scrollbar width
-  }}
-></div>
+          width: "calc(100% - 8px)", // Accounts for scrollbar width
+        }}
+      ></div>
 
-{/* Custom CSS for Responsive Gradient */}
-<style jsx>{`
-  .responsive-gradient {
-    /* Default gradient for mobile and smaller screens */
-    background-image: linear-gradient(
-      to bottom,
-      transparent 80%,
-      rgba(255, 255, 255, 1) 100%
-    ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
-  }
+      {/* Custom CSS for Responsive Gradient */}
+      <style jsx>{`
+        .responsive-gradient {
+          /* Default gradient for mobile and smaller screens */
+          background-image: linear-gradient(
+              to bottom,
+              transparent 80%,
+              rgba(255, 255, 255, 1) 100%
+            ),
+            url("https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png");
+        }
 
-  /* Laptop (1024px - 1440px) */
-  @media (min-width: 1024px) and (max-width: 1440px) {
-    .responsive-gradient {
-      background-image: linear-gradient(
-        to bottom,
-        transparent 70%,
-        rgba(255, 255, 255, 1) 100%
-      ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
-    }
-  }
+        /* Laptop (1024px - 1440px) */
+        @media (min-width: 1024px) and (max-width: 1440px) {
+          .responsive-gradient {
+            background-image: linear-gradient(
+                to bottom,
+                transparent 70%,
+                rgba(255, 255, 255, 1) 100%
+              ),
+              url("https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png");
+          }
+        }
 
-  /* Desktop (1441px - 1920px) */
-  @media (min-width: 1441px) and (max-width: 1920px) {
-    .responsive-gradient {
-      background-image: linear-gradient(
-        to bottom,
-        transparent 60%,
-        rgba(255, 255, 255, 1) 100%
-      ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
-    }
-  }
+        /* Desktop (1441px - 1920px) */
+        @media (min-width: 1441px) and (max-width: 1920px) {
+          .responsive-gradient {
+            background-image: linear-gradient(
+                to bottom,
+                transparent 60%,
+                rgba(255, 255, 255, 1) 100%
+              ),
+              url("https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png");
+          }
+        }
 
-  /* 4K (1921px - 3840px) */
-  @media (min-width: 1921px) and (max-width: 3840px) {
-    .responsive-gradient {
-      background-image: linear-gradient(
-        to bottom,
-        transparent 50%,
-        rgba(255, 255, 255, 1) 100%
-      ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
-    }
-  }
+        /* 4K (1921px - 3840px) */
+        @media (min-width: 1921px) and (max-width: 3840px) {
+          .responsive-gradient {
+            background-image: linear-gradient(
+                to bottom,
+                transparent 50%,
+                rgba(255, 255, 255, 1) 100%
+              ),
+              url("https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png");
+          }
+        }
 
-  /* 8K (3841px and above) */
-  @media (min-width: 3841px) {
-    .responsive-gradient {
-      background-image: linear-gradient(
-        to bottom,
-        transparent 40%,
-        rgba(255, 255, 255, 1) 100%
-      ), url('https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png');
-    }
-  }
-`}</style>
+        /* 8K (3841px and above) */
+        @media (min-width: 3841px) {
+          .responsive-gradient {
+            background-image: linear-gradient(
+                to bottom,
+                transparent 40%,
+                rgba(255, 255, 255, 1) 100%
+              ),
+              url("https://downloads.intercomcdn.com/i/o/509471/f2d56bacf1cb3ac35d9ab59c/deb9cd0325c64b1e1239b3c2ec8c1516.png");
+          }
+        }
+      `}</style>
 
       {/* Text Above Gradient */}
       <div className="relative z-10 text-[27px] font-bold mt-32 ml-4">
@@ -366,8 +372,7 @@ export default function Home() {
           {
             image:
               "https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/create-a-generative-ai-modelling-3d.jpg?v=1738615897454",
-            title:
-              "Virtual Reality Solutions",
+            title: "Virtual Reality Solutions",
             description:
               "VR is your portal to endless possibilities. We use VR to put people in alternate realities for training, gaming, or virtual tours. Our VR creates unmatched engagement.",
           },
@@ -375,13 +380,15 @@ export default function Home() {
             image:
               "https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/create-a-concept-art.jpg?v=1738615900378",
             title: "MedTech Solutions",
-            description: "MedTech signifies the intersection of medicine and technology. We create innovative medical applications leveraging XR to enhance surgical procedures, provide immersive patient education, and revolutionize medical training.",
+            description:
+              "MedTech signifies the intersection of medicine and technology. We create innovative medical applications leveraging XR to enhance surgical procedures, provide immersive patient education, and revolutionize medical training.",
           },
           {
             image:
               "https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/create-a-architecture-visualization.jpg?v=1738615901650",
             title: "Computer Vision Solutions",
-            description: "Computer vision equips machines with the ability to interpret and understand visual data from the real world. We utilize computer vision to bridge the physical and digital realms, creating seamless interactive experiences.",
+            description:
+              "Computer vision equips machines with the ability to interpret and understand visual data from the real world. We utilize computer vision to bridge the physical and digital realms, creating seamless interactive experiences.",
           },
         ].map((item, index) => (
           <div
@@ -440,25 +447,25 @@ export default function Home() {
       </div>
       {/* Suggestions Container */}
       <div
-  ref={suggestionsContainerRef}
-  className="px-4 py-2 flex space-x-2 overflow-x-auto scrollbar-hide"
-  style={{
-    scrollBehavior: "smooth",
-    WebkitOverflowScrolling: "touch",
-  }}
->
-  {suggestions.map((suggestion, index) => (
-    <motion.button
-      key={index}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={() => handleSuggestionClick(suggestion)}
-      className="bg-zinc-700 text-white px-3 py-1 rounded-full text-sm whitespace-nowrap hover:bg-zinc-600 transition-colors"
-    >
-      {suggestion}
-    </motion.button>
-  ))}
-</div>
+        ref={suggestionsContainerRef}
+        className="px-4 py-2 flex space-x-2 overflow-x-auto scrollbar-hide"
+        style={{
+          scrollBehavior: "smooth",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {suggestions.map((suggestion, index) => (
+          <motion.button
+            key={index}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleSuggestionClick(suggestion)}
+            className="bg-zinc-700 text-white px-3 py-1 rounded-full text-sm whitespace-nowrap hover:bg-zinc-600 transition-colors"
+          >
+            {suggestion}
+          </motion.button>
+        ))}
+      </div>
       {/* Input Area */}
       <div className="border-t border-gray-200 p-4 bg-white">
         {" "}
@@ -556,18 +563,20 @@ export default function Home() {
   const renderNewsView = () => (
     <div className="flex flex-col h-full bg-white">
       <div className="p-4 bg-white border-b">
-        <h1 className="text-xl font-bold text-[#595959] text-center mb-4">News</h1>
+        <h1 className="text-xl font-bold text-[#595959] text-center mb-4">
+          News
+        </h1>
         <h1 className="text-base font-bold text-[#595959]">Latest News</h1>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
         {newsItems.map((news, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className="bg-white rounded-lg flex flex-col border border-solid border-gray-300 shadow-md hover:shadow-xl transition-shadow duration-300"
           >
-            <img 
-              src={`https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/create-a-architecture-visualization.jpg?v=1738615901650`} 
-              alt={news.title} 
+            <img
+              src={`https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/create-a-architecture-visualization.jpg?v=1738615901650`}
+              alt={news.title}
               className="w-full h-48 object-cover rounded-t-lg"
             />
             <div className="p-4">
@@ -581,7 +590,7 @@ export default function Home() {
         ))}
       </div>
     </div>
-  );;
+  );
 
   const renderMessage = (message: Message) => {
     if (message.sender === "user") {
@@ -594,8 +603,9 @@ export default function Home() {
       );
     } else {
       // Check if this specific bot message is in a generating state
-      const isGeneratingThisMessage = isGenerating && messages[messages.length - 1] === message;
-  
+      const isGeneratingThisMessage =
+        isGenerating && messages[messages.length - 1] === message;
+
       return (
         <div className="flex justify-start mb-4">
           <div className="max-w-[80%] rounded-2xl p-[1px] bg-gradient-to-r from-[#FEE1D4] to-[#DBBDDB]">
@@ -611,30 +621,30 @@ export default function Home() {
                   Cryenx • AI Agent
                 </span>
               </div>
-  
+
               {isGeneratingThisMessage ? (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ 
-                    repeat: Infinity, 
-                    duration: 1, 
-                    repeatType: "reverse" 
+                  transition={{
+                    repeat: Infinity,
+                    duration: 1,
+                    repeatType: "reverse",
                   }}
                   className="flex items-center space-x-2 text-gray-600"
                 >
                   <div className="animate-pulse">Thinking</div>
                   <div className="flex space-x-1">
                     {[1, 2, 3].map((dot) => (
-                      <motion.div 
+                      <motion.div
                         key={dot}
-                        animate={{ 
+                        animate={{
                           scale: [1, 1.2, 1],
-                          transition: { 
-                            repeat: Infinity, 
-                            duration: 0.5, 
-                            delay: dot * 0.2 
-                          } 
+                          transition: {
+                            repeat: Infinity,
+                            duration: 0.5,
+                            delay: dot * 0.2,
+                          },
                         }}
                         className="w-2 h-2 bg-gray-500 rounded-full"
                       />
@@ -785,16 +795,13 @@ export default function Home() {
                   News
                 </span>
               </button>
-              
             </div>
             <div className="text-center py-2 bg-white text-black">
-          Powered by Cryenx Labs
-        </div>
+              Powered by Cryenx Labs
+            </div>
           </motion.div>
-          
         )}
       </AnimatePresence>
-      
     </>
   );
 }
