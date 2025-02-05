@@ -246,7 +246,7 @@ export default function Home() {
   };
 
   const renderHomeView = () => (
-    <div className="p-4 text-gray-300 overflow-y-auto h-full relative bg-white">
+    <div className="p-4 text-gray-300 overflow-y-auto h-full relative">
       {/* Top Left Logo */}
       <div className="absolute top-8 left-8 z-50">
         <img
@@ -785,13 +785,16 @@ export default function Home() {
                   News
                 </span>
               </button>
+              
             </div>
-            <div className="flex justify-center items-center mt-1 mb-3 text-xs text-gray-500 bg-white">
-  Powered by Cryenx Labs
-</div>
+            <div className="text-center py-2 bg-white text-black">
+          Powered by Cryenx Labs
+        </div>
           </motion.div>
+          
         )}
       </AnimatePresence>
+      
     </>
   );
 }
