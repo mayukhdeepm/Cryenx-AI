@@ -121,6 +121,8 @@ export default function Home() {
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
   const messagesContainerRef = useRef<null | HTMLDivElement>(null);
   const suggestionsContainerRef = useRef<null | HTMLDivElement>(null);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+
 
   // Automatically open the chatbot after 5 seconds
   useEffect(() => {
@@ -169,16 +171,17 @@ export default function Home() {
   }, [messages, isChatOpen, activeView]);
 
   const handleSendMessage = async (text: string) => {
-    if (!text.trim() || isLoading) return;
+    if (!text.trim() || isLoading || isRateLimited) return;
 
     setIsLoading(true);
     setIsGenerating(true);
+    setIsRateLimited(false); // Reset rate limit status on new message
 
     // Create the user's message
     const userMessage: Message = {
-      id: messages.length + 1,
-      text: text.trim(),
-      sender: "user",
+        id: messages.length + 1,
+        text: text.trim(),
+        sender: "user",
     };
 
     // Add the user's message to the state
@@ -186,61 +189,74 @@ export default function Home() {
 
     // Add a "thinking" message for the bot
     const thinkingMessage: Message = {
-      id: messages.length + 2,
-      text: "thinking...", // Temporary placeholder
-      sender: "bot",
+        id: messages.length + 2,
+        text: "thinking...", // Temporary placeholder
+        sender: "bot",
     };
 
     setMessages((prevMessages) => [...prevMessages, thinkingMessage]);
     setError(null);
 
     try {
-      // Call the API to get the AI response
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      });
+        // Call the API to get the AI response
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            //  Pass the ENTIRE messages array (including previous messages)
+            body: JSON.stringify({ messages: [...messages, userMessage] }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-      }
+        if (!response.ok) {
+            if (response.status === 429) { // Check for rate limit status code
+                setIsRateLimited(true);
+                throw new Error("Rate limit exceeded. Please try again later.");
+            } else {
+                throw new Error(`API error: ${response.statusText}`);
+            }
+        }
 
-      const data = await response.json();
+        const data = await response.json();
 
-      // Simulate a delay for the fade-in effect
-      await new Promise((resolve) => setTimeout(resolve, 500));
+        // Simulate a delay for the fade-in effect
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Create the actual bot message
-      const botMessage: Message = {
-        id: messages.length + 2,
-        text: data.result,
-        sender: "bot",
-      };
+        let botMessageText = data.result;
 
-      // Replace the "thinking" message with the actual bot message
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg.id === thinkingMessage.id ? botMessage : msg
-        )
-      );
+        // If rate limited, show a custom message instead of the repeated AI message
+        if (isRateLimited) {
+            botMessageText = "Our AI agent is currently experiencing high demand. Please try again in a few minutes.";
+        }
+
+        // Create the actual bot message
+        const botMessage: Message = {
+            id: messages.length + 2,
+            text: botMessageText,
+            sender: "bot",
+        };
+
+        // Replace the "thinking" message with the actual bot message
+        setMessages((prevMessages) =>
+            prevMessages.map((msg) =>
+                msg.id === thinkingMessage.id ? botMessage : msg
+            )
+        );
     } catch (error) {
-      console.error("Error in handleSendMessage:", error);
-      setError(
-        error instanceof Error ? error.message : "An unexpected error occurred"
-      );
+        console.error("Error in handleSendMessage:", error);
+        setError(
+            error instanceof Error ? error.message : "An unexpected error occurred"
+        );
 
-      // Remove the "thinking" message in case of an error
-      setMessages((prevMessages) =>
-        prevMessages.filter((msg) => msg.id !== thinkingMessage.id)
-      );
+        // Remove the "thinking" message in case of an error
+        setMessages((prevMessages) =>
+            prevMessages.filter((msg) => msg.id !== thinkingMessage.id)
+        );
     } finally {
-      setIsLoading(false);
-      setIsGenerating(false);
+        setIsLoading(false);
+        setIsGenerating(false);
     }
-  };
+};
 
   const handleSuggestionClick = (suggestion: string) => {
     setInputValue(suggestion);
@@ -480,8 +496,10 @@ export default function Home() {
           />
           <button
             type="submit"
-            disabled={!inputValue.trim()}
-            className="bg-black text-white p-3 rounded-3xl hover:bg-black disabled:opacity-50 transition-colors"
+            disabled={!inputValue.trim() || isRateLimited} // Disable the button when rate limited
+            className={`bg-black text-white p-3 rounded-3xl hover:bg-black transition-colors
+              ${isRateLimited ? "opacity-50 cursor-not-allowed" : "disabled:opacity-50"}`
+            }
           >
             <img
               src="https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/icons8-arrow-96%20(1).png?v=1738655658344"
@@ -490,6 +508,11 @@ export default function Home() {
             />
           </button>
         </form>
+        {isRateLimited && (
+          <p className="text-red-500 text-sm mt-1">
+            Our AI agent is currently experiencing high demand. Please try again in a few minutes.
+          </p>
+        )}
       </div>
     </div>
   );
@@ -594,72 +617,76 @@ export default function Home() {
 
   const renderMessage = (message: Message) => {
     if (message.sender === "user") {
-      return (
-        <div className="flex justify-end mb-2">
-          <div className="max-w-[80%] rounded-2xl p-3 bg-black text-white">
-            {message.text}
-          </div>
-        </div>
-      );
-    } else {
-      // Check if this specific bot message is in a generating state
-      const isGeneratingThisMessage =
-        isGenerating && messages[messages.length - 1] === message;
-
-      return (
-        <div className="flex justify-start mb-4">
-          <div className="max-w-[80%] rounded-2xl p-[1px] bg-gradient-to-r from-[#FEE1D4] to-[#DBBDDB]">
-            <div className="bg-[#F5F5F5] rounded-2xl p-3 h-full">
-              {/* Agent Icon and Name */}
-              <div className="flex items-center space-x-2 mb-2">
-                <img
-                  src="https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/Cryenx_Logo_Mark_Labs.svg?v=1738650546537"
-                  alt="Agent Icon"
-                  className="w-6 h-6 rounded-full"
-                />
-                <span className="text-sm font-semibold text-black">
-                  Cryenx • AI Agent
-                </span>
-              </div>
-
-              {isGeneratingThisMessage ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 1,
-                    repeatType: "reverse",
-                  }}
-                  className="flex items-center space-x-2 text-gray-600"
-                >
-                  <div className="animate-pulse">Thinking</div>
-                  <div className="flex space-x-1">
-                    {[1, 2, 3].map((dot) => (
-                      <motion.div
-                        key={dot}
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          transition: {
-                            repeat: Infinity,
-                            duration: 0.5,
-                            delay: dot * 0.2,
-                          },
-                        }}
-                        className="w-2 h-2 bg-gray-500 rounded-full"
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              ) : (
-                <p className="text-gray-800">{message.text}</p>
-              )}
+        return (
+            <div className="flex justify-end mb-2">
+                <div className="max-w-[80%] rounded-2xl p-3 bg-black text-white">
+                    {message.text}
+                </div>
             </div>
-          </div>
-        </div>
-      );
+        );
+    } else {
+        // Check if this specific bot message is in a generating state
+        const isGeneratingThisMessage =
+            isGenerating && messages[messages.length - 1] === message;
+
+        return (
+            <div className="flex justify-start mb-4">
+                <div className="max-w-[80%] rounded-2xl p-[1px] bg-gradient-to-r from-[#FEE1D4] to-[#DBBDDB]">
+                    <div className="bg-[#F5F5F5] rounded-2xl p-3 h-full">
+                        {/* Agent Icon and Name */}
+                        <div className="flex items-center space-x-2 mb-2">
+                            <img
+                                src="https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/Cryenx_Logo_Mark_Labs.svg?v=1738650546537"
+                                alt="Agent Icon"
+                                className="w-6 h-6 rounded-full"
+                            />
+                            <span className="text-sm font-semibold text-black">
+                                Cryenx • AI Agent
+                            </span>
+                        </div>
+
+                        {isGeneratingThisMessage ? (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{
+                                    repeat: Infinity,
+                                    duration: 1,
+                                    repeatType: "reverse",
+                                }}
+                                className="flex items-center space-x-2 text-gray-600"
+                            >
+                                <div className="animate-pulse">Thinking</div>
+                                <div className="flex space-x-1">
+                                    {[1, 2, 3].map((dot) => (
+                                        <motion.div
+                                            key={dot}
+                                            animate={{
+                                                scale: [1, 1.2, 1],
+                                                transition: {
+                                                    repeat: Infinity,
+                                                    duration: 0.5,
+                                                    delay: dot * 0.2,
+                                                },
+                                            }}
+                                            className="w-2 h-2 bg-gray-500 rounded-full"
+                                        />
+                                    ))}
+                                </div>
+                            </motion.div>
+                        ) : (
+                            // Render the HTML
+                            <div
+                                className="text-gray-800"
+                                dangerouslySetInnerHTML={{ __html: message.text }}
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
     }
-  };
+};
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
