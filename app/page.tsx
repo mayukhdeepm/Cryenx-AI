@@ -123,7 +123,6 @@ export default function Home() {
   const suggestionsContainerRef = useRef<null | HTMLDivElement>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
 
-
   // Automatically open the chatbot after 5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -493,12 +492,13 @@ export default function Home() {
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Type your message..."
             className="flex-1 p-2 pl-4 rounded-3xl bg-gray-100 text-black border border-gray-300 focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
+            disabled={isLoading}
           />
           <button
             type="submit"
-            disabled={!inputValue.trim() || isRateLimited} // Disable the button when rate limited
+            disabled={!inputValue.trim() || isLoading || isRateLimited} // Disable the button when rate limited or while loading
             className={`bg-black text-white p-3 rounded-3xl hover:bg-black transition-colors
-              ${isRateLimited ? "opacity-50 cursor-not-allowed" : "disabled:opacity-50"}`
+              ${isLoading || isRateLimited ? "opacity-50 cursor-not-allowed" : "disabled:opacity-50"}`
             }
           >
             <img
@@ -675,10 +675,14 @@ export default function Home() {
                                 </div>
                             </motion.div>
                         ) : (
-                            // Render the HTML
+                            // Render the HTML with styled links
                             <div
                                 className="text-gray-800"
-                                dangerouslySetInnerHTML={{ __html: message.text }}
+                                dangerouslySetInnerHTML={{
+                                    __html: message.text.replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g, (match, url, text) => {
+                                        return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: blue; text-decoration: underline; cursor: pointer;" onMouseOver="this.style.color='darkblue'" onMouseOut="this.style.color='blue'">${text}</a>`;
+                                    }),
+                                }}
                             />
                         )}
                     </div>
