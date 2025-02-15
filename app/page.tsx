@@ -1,3 +1,4 @@
+// page.tsx
 "use client";
 import React from "react";
 import ReactDOM from "react-dom";
@@ -144,16 +145,41 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   }, [content]);
 
   async function markdownToHtml(markdown: string) {
-    const result = await unified()
+    let html = await unified()
       .use(remarkParse)
       .use(remarkGfm)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
       .use(rehypeSanitize)
-      .use(rehypeStringify)
-      .process(markdown);
+      .use(rehypeStringify
+      ).use(() => {
+        return (tree) => {
+          // @ts-ignore
+          tree.children.forEach((node) => {
+            if (node.type === 'element' && node.tagName === 'a') {
+              node.tagName = 'StyledLink';
+            }
+          });
+        };
+      })
+      .use(() => {
+        return (tree) => {
+          // @ts-ignore
+          tree.children.forEach((node) => {
+            if (node.type === 'element' && node.tagName === 'StyledLink') {
+             //  console.log(node)
+             //  node.properties = { ...node.properties, target: '_blank', rel: 'noopener noreferrer' };
+            }
+          });
+        };
+      })
+      .process(markdown)
+      .then((result) => result.toString());
 
-    return DOMPurify.sanitize(result.toString());
+    //Modify HTML string directly to add React component
+    html = html.replace(/<a\s+href/g, '<StyledLink href');
+    html = html.replace(/<\/a>/g, '</StyledLink>');
+    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
   }
 
   return (
@@ -192,6 +218,20 @@ export default function Home() {
 
   const [hasPlayedOpenSound, setHasPlayedOpenSound] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
+  const [hasPlayedInitialSound, setHasPlayedInitialSound] = useState(() => {
+    // Initialize state from sessionStorage, if available
+    if (typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem('hasPlayedInitialSound') === 'true';
+    }
+    return false; // Default to false if sessionStorage is not available
+  });
+
+  useEffect(() => {
+    // Update sessionStorage whenever hasPlayedInitialSound changes
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('hasPlayedInitialSound', String(hasPlayedInitialSound));
+    }
+  }, [hasPlayedInitialSound]);
 
 
   // Automatically open the chatbot after 5 seconds
@@ -203,11 +243,13 @@ export default function Home() {
         setIsChatOpen(true);
         setIsOpening(true); // Set isOpening to true
 
-        if (chatbotOpenSound.current) {
+        // Play sound only if it hasn't been played before
+        if (chatbotOpenSound.current && !hasPlayedInitialSound) {
           chatbotOpenSound.current
             .play()
             .then(() => {
               setHasPlayedOpenSound(true);
+              setHasPlayedInitialSound(true); // Set to true after playing once
             })
             .catch((error) => {
               console.error("Error playing chatbot open sound:", error);
@@ -219,7 +261,7 @@ export default function Home() {
     }
 
     return () => clearTimeout(timer);
-  }, [hasPlayedOpenSound, isOpening]);
+  }, [hasPlayedOpenSound, isOpening, hasPlayedInitialSound]);//Include hasPlayedInitialSound in the dependency
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -923,7 +965,9 @@ export default function Home() {
               >
                 <IconNews
                   className={`w-6 h-6 ${
-                    activeView === "news" ? "text-black" : "text-gray-500"
+                    activeView === "news"
+                      ? "text-black font-medium"
+                      : "text-gray-500"
                   }`}
                 />
                 <span

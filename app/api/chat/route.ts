@@ -6,7 +6,8 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/tunedMo
 export async function POST(req: Request) {
     console.log('API route called');
 
-    const apiKey = process.env.GEMINI_API_KEY // Replace with your actual key or environment variable
+    const apiKey = process.env.GEMINI_API_KEY
+    
     if (!apiKey) {
         console.error('Gemini API key is missing');
         return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
