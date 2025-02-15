@@ -13,6 +13,14 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import rehypeRaw from "rehype-raw";
+import rehypeStringify from "rehype-stringify";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
+import DOMPurify from "dompurify";
 
 type Message = {
   id: number;
@@ -103,6 +111,60 @@ const newsItems = [
   },
 ];
 
+interface MarkdownRendererProps {
+  content: string;
+}
+
+const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+  const [htmlContent, setHtmlContent] = useState("");
+
+  useEffect(() => {
+    async function processMarkdown() {
+      // 1. Clean up the Markdown text FIRST
+      const cleanedContent = content
+        .replace(/^##\s*/, "") // Remove leading ##
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold formatting
+        .replace(/1\.\s/, "") //remove numbers
+        .replace(/2\.\s/, "") //remove numbers
+        .replace(/3\.\s/, "") //remove numbers
+        .replace(/4\.\s/, "") //remove numbers
+        .replace(/5\.\s/, "") //remove numbers
+        .replace(/6\.\s/, "") //remove numbers
+        .replace(/7\.\s/, "") //remove numbers
+        .replace(/8\.\s/, "") //remove numbers
+        .replace(/9\.\s/, "") //remove numbers
+        .replace(/10\.\s/, ""); //remove numbers
+
+      // 2. Process through the markdown pipeline.
+      const html = await markdownToHtml(cleanedContent);
+      setHtmlContent(html);
+    }
+
+    processMarkdown();
+  }, [content]);
+
+  async function markdownToHtml(markdown: string) {
+    const result = await unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeRaw)
+      .use(rehypeSanitize)
+      .use(rehypeStringify)
+      .process(markdown);
+
+    return DOMPurify.sanitize(result.toString());
+  }
+
+  return (
+    <div
+      className="markdown-body"
+      style={{ wordWrap: "break-word", overflowWrap: "break-word" }}
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
+    />
+  );
+};
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -122,15 +184,42 @@ export default function Home() {
   const messagesContainerRef = useRef<null | HTMLDivElement>(null);
   const suggestionsContainerRef = useRef<null | HTMLDivElement>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
+  
+  // Audio elements
+  const userSentSound = useRef<HTMLAudioElement>(null);
+  const agentReceivedSound = useRef<HTMLAudioElement>(null);
+  const chatbotOpenSound = useRef<HTMLAudioElement>(null);
+
+  const [hasPlayedOpenSound, setHasPlayedOpenSound] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
+
 
   // Automatically open the chatbot after 5 seconds
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsChatOpen(true);
-    }, 5000); // 5 seconds delay
+    let timer: NodeJS.Timeout;
 
-    return () => clearTimeout(timer); // Cleanup the timer on unmount
-  }, []); // Empty dependency array ensures this runs only once on mount
+    if (!hasPlayedOpenSound && !isOpening) {
+      timer = setTimeout(() => {
+        setIsChatOpen(true);
+        setIsOpening(true); // Set isOpening to true
+
+        if (chatbotOpenSound.current) {
+          chatbotOpenSound.current
+            .play()
+            .then(() => {
+              setHasPlayedOpenSound(true);
+            })
+            .catch((error) => {
+              console.error("Error playing chatbot open sound:", error);
+            });
+        } else {
+          console.warn("Chatbot open sound element not yet available.");
+        }
+      }, 5000);
+    }
+
+    return () => clearTimeout(timer);
+  }, [hasPlayedOpenSound, isOpening]);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -178,84 +267,96 @@ export default function Home() {
 
     // Create the user's message
     const userMessage: Message = {
-        id: messages.length + 1,
-        text: text.trim(),
-        sender: "user",
+      id: messages.length + 1,
+      text: text.trim(),
+      sender: "user",
     };
+
+    // Play user sent sound
+    userSentSound.current?.play().catch((error) => {
+      console.error("Error playing user sent sound:", error);
+    });
 
     // Add the user's message to the state
     setMessages((prevMessages) => [...prevMessages, userMessage]);
 
     // Add a "thinking" message for the bot
     const thinkingMessage: Message = {
-        id: messages.length + 2,
-        text: "thinking...", // Temporary placeholder
-        sender: "bot",
+      id: messages.length + 2,
+      text: "thinking...", // Temporary placeholder
+      sender: "bot",
     };
 
     setMessages((prevMessages) => [...prevMessages, thinkingMessage]);
     setError(null);
 
     try {
-        // Call the API to get the AI response
-        const response = await fetch("/api/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            //  Pass the ENTIRE messages array (including previous messages)
-            body: JSON.stringify({ messages: [...messages, userMessage] }),
-        });
+      // Call the API to get the AI response
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        //  Pass the ENTIRE messages array (including previous messages)
+        body: JSON.stringify({ messages: [...messages, userMessage] }),
+      });
 
-        if (!response.ok) {
-            if (response.status === 429) { // Check for rate limit status code
-                setIsRateLimited(true);
-                throw new Error("Rate limit exceeded. Please try again later.");
-            } else {
-                throw new Error(`API error: ${response.statusText}`);
-            }
+      if (!response.ok) {
+        if (response.status === 429) {
+          // Check for rate limit status code
+          setIsRateLimited(true);
+          throw new Error("Rate limit exceeded. Please try again later.");
+        } else {
+          throw new Error(`API error: ${response.statusText}`);
         }
+      }
 
-        const data = await response.json();
+      const data = await response.json();
 
-        // Simulate a delay for the fade-in effect
-        await new Promise((resolve) => setTimeout(resolve, 500));
+      // Simulate a delay for the fade-in effect
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-        let botMessageText = data.result;
+      let botMessageText = data.result;
 
-        // If rate limited, show a custom message instead of the repeated AI message
-        if (isRateLimited) {
-            botMessageText = "Our AI agent is currently experiencing high demand. Please try again in a few minutes.";
-        }
+      // Play agent received sound
+      agentReceivedSound.current?.play().catch((error) => {
+        console.error("Error playing agent received sound:", error);
+      });
 
-        // Create the actual bot message
-        const botMessage: Message = {
-            id: messages.length + 2,
-            text: botMessageText,
-            sender: "bot",
-        };
+      // If rate limited, show a custom message instead of the repeated AI message
+      if (isRateLimited) {
+        botMessageText =
+          "Our AI agent is currently experiencing high demand. Please try again in a few minutes.";
+      }
 
-        // Replace the "thinking" message with the actual bot message
-        setMessages((prevMessages) =>
-            prevMessages.map((msg) =>
-                msg.id === thinkingMessage.id ? botMessage : msg
-            )
-        );
+      // Create the actual bot message
+      const botMessage: Message = {
+        id: messages.length + 2,
+        text: botMessageText,
+        sender: "bot",
+      };
+
+      // Replace the "thinking" message with the actual bot message
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === thinkingMessage.id ? botMessage : msg
+        )
+      );
     } catch (error) {
-        console.error("Error in handleSendMessage:", error);
-        setError(
-            error instanceof Error ? error.message : "An unexpected error occurred"
-        );
+      console.error("Error in handleSendMessage:", error);
+      setError(
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      );
 
-        // Remove the "thinking" message in case of an error
-        setMessages((prevMessages) =>
-            prevMessages.filter((msg) => msg.id !== thinkingMessage.id)
-        );
+      // Remove the "thinking" message in case of an error
+      setMessages((prevMessages) =>
+        prevMessages.filter((msg) => msg.id !== thinkingMessage.id)
+      );
     } finally {
-        setIsLoading(false);
-        setIsGenerating(false);
+      setIsLoading(false);
+      setIsGenerating(false);
     }
-};
+  };
 
   const handleSuggestionClick = (suggestion: string) => {
     setInputValue(suggestion);
@@ -498,8 +599,9 @@ export default function Home() {
             type="submit"
             disabled={!inputValue.trim() || isLoading || isRateLimited} // Disable the button when rate limited or while loading
             className={`bg-black text-white p-3 rounded-3xl hover:bg-black transition-colors
-              ${isLoading || isRateLimited ? "opacity-50 cursor-not-allowed" : "disabled:opacity-50"}`
-            }
+              ${
+                isLoading || isRateLimited ? "opacity-50 cursor-not-allowed" : ""
+              }`}
           >
             <img
               src="https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/icons8-arrow-96%20(1).png?v=1738655658344"
@@ -510,7 +612,8 @@ export default function Home() {
         </form>
         {isRateLimited && (
           <p className="text-red-500 text-sm mt-1">
-            Our AI agent is currently experiencing high demand. Please try again in a few minutes.
+            Our AI agent is currently experiencing high demand. Please try again
+            in a few minutes.
           </p>
         )}
       </div>
@@ -617,80 +720,73 @@ export default function Home() {
 
   const renderMessage = (message: Message) => {
     if (message.sender === "user") {
-        return (
-            <div className="flex justify-end mb-2">
-                <div className="max-w-[80%] rounded-2xl p-3 bg-black text-white">
-                    {message.text}
-                </div>
-            </div>
-        );
+      return (
+        <div className="flex justify-end mb-2">
+          <div className="max-w-[80%] rounded-2xl p-3 bg-black text-white">
+            {message.text}
+          </div>
+        </div>
+      );
     } else {
-        // Check if this specific bot message is in a generating state
-        const isGeneratingThisMessage =
-            isGenerating && messages[messages.length - 1] === message;
+      // Check if this specific bot message is in a generating state
+      const isGeneratingThisMessage =
+        isGenerating && messages[messages.length - 1] === message;
 
-        return (
-            <div className="flex justify-start mb-4">
-                <div className="max-w-[80%] rounded-2xl p-[1px] bg-gradient-to-r from-[#FEE1D4] to-[#DBBDDB]">
-                    <div className="bg-[#F5F5F5] rounded-2xl p-3 h-full">
-                        {/* Agent Icon and Name */}
-                        <div className="flex items-center space-x-2 mb-2">
-                            <img
-                                src="https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/Cryenx_Logo_Mark_Labs.svg?v=1738650546537"
-                                alt="Agent Icon"
-                                className="w-6 h-6 rounded-full"
-                            />
-                            <span className="text-sm font-semibold text-black">
-                                Cryenx • AI Agent
-                            </span>
-                        </div>
+      return (
+        <div className="flex justify-start mb-4">
+          <div className="max-w-[80%] rounded-2xl p-[1px] bg-gradient-to-r from-[#FEE1D4] to-[#DBBDDB]">
+            <div className="bg-[#F5F5F5] rounded-2xl p-3 h-full">
+              {/* Agent Icon and Name */}
+              <div className="flex items-center space-x-2 mb-2">
+                <img
+                  src="https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/Cryenx_Logo_Mark_Labs.svg?v=1738650546537"
+                  alt="Agent Icon"
+                  className="w-6 h-6 rounded-full"
+                />
+                <span className="text-sm font-semibold text-black">
+                  Cryenx • AI Agent
+                </span>
+              </div>
 
-                        {isGeneratingThisMessage ? (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{
-                                    repeat: Infinity,
-                                    duration: 1,
-                                    repeatType: "reverse",
-                                }}
-                                className="flex items-center space-x-2 text-gray-600"
-                            >
-                                <div className="animate-pulse">Thinking</div>
-                                <div className="flex space-x-1">
-                                    {[1, 2, 3].map((dot) => (
-                                        <motion.div
-                                            key={dot}
-                                            animate={{
-                                                scale: [1, 1.2, 1],
-                                                transition: {
-                                                    repeat: Infinity,
-                                                    duration: 0.5,
-                                                    delay: dot * 0.2,
-                                                },
-                                            }}
-                                            className="w-2 h-2 bg-gray-500 rounded-full"
-                                        />
-                                    ))}
-                                </div>
-                            </motion.div>
-                        ) : (
-                            // Render the HTML with styled links
-                            <div
-                                className="text-gray-800"
-                                dangerouslySetInnerHTML={{
-                                    __html: message.text.replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g, (match, url, text) => {
-                                        return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: blue; text-decoration: underline; cursor: pointer;" onMouseOver="this.style.color='darkblue'" onMouseOut="this.style.color='blue'">${text}</a>`;
-                                    }),
-                                }}
-                            />
-                        )}
-                    </div>
-                </div>
+              {isGeneratingThisMessage ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 1,
+                    repeatType: "reverse",
+                  }}
+                  className="flex items-center space-x-2 text-gray-600"
+                >
+                  <div className="animate-pulse">Thinking</div>
+                  <div className="flex space-x-1">
+                    {[1, 2, 3].map((dot) => (
+                      <motion.div
+                        key={dot}
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          transition: {
+                            repeat: Infinity,
+                            duration: 0.5,
+                            delay: dot * 0.2,
+                          },
+                        }}
+                        className="w-2 h-2 bg-gray-500 rounded-full"
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              ) : (
+                // Render the HTML with styled links
+                <MarkdownRenderer content={message.text} />
+              )}
             </div>
-        );
+          </div>
+        </div>
+      );
     }
-};
+  };
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -713,6 +809,20 @@ export default function Home() {
 
   return (
     <>
+      {/* Audio elements */}
+      <audio ref={userSentSound} preload="auto">
+        <source src="https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/happy-pop-2-185287.mp3?v=1739622412761" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+      <audio ref={agentReceivedSound} preload="auto">
+        <source src="https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/level-up-191997.mp3?v=1739622416344" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+      <audio ref={chatbotOpenSound} preload="auto">
+        <source src="https://cdn.glitch.global/986fc018-8516-42f5-af32-953ec30d55ab/happy-pop-2-185287.mp3?v=1739622412761" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+
       {/* Chat Widget Icon */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
